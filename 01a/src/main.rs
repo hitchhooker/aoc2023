@@ -81,9 +81,18 @@ mod tests {
 
     #[test]
     fn test_parse_first_and_last() {
-        let input = "12345\nabcdf\n67890";
-        let expected = vec!["15".to_string(), "60".to_string()];
+        let input = "1abc2\npqr3stu8vwx\na1b2c3d4e5f\ntreb7uchet";
+        let expected = vec!["12".to_string(), "38".to_string(), "15".to_string(), "77".to_string()];
         let result = parse_first_and_last_digit(input).unwrap();
         assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_calculate_sum() {
+        let input = vec!["12".to_string(), "38".to_string(), "15".to_string(), "77".to_string()];
+        let expected_sum = "142"; // expected sum of 12 + 38 + 15 + 77
+
+        let result = calculate_sum(input).unwrap();
+        assert_eq!(result, expected_sum);
     }
 }
