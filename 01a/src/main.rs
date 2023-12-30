@@ -21,6 +21,17 @@ fn parse_first_and_last_digit(input: &str) -> Result<Vec<String>, Box<dyn std::e
     Ok(results)
 }
 
+fn calculate_sum(results: Vec<String>) -> Result<String, Box<dyn std::error::Error>> {
+    let sum = results
+        .iter()
+        .map(|s| s.parse::<i32>())
+        .collect::<Result<Vec<i32>, _>>()?
+        .iter()
+        .sum::<i32>();
+
+    Ok(sum.to_string())  // Convert the sum back to a String for output
+}
+
 async fn fetch_url(url: &str, cookie: String) -> Result<String, reqwest::Error> {
     let client = reqwest::Client::new();
     // let response = reqwest::get(url).await?;
@@ -38,6 +49,7 @@ fn save_to_file(filename: &str, data: &str) -> Result<(), Error> {
     Ok(())
 }
 
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv().ok(); // Load .env file
@@ -52,7 +64,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // output
     match parse_first_and_last_digit(&body) {
         Ok(results) => {
-            let output = results.join("\n");  // Combine the results into a single string
+            let numbers = results.join("\n");  // Combine the results into a single string
+            let _ = save_to_file("output/numbers.txt", &numbers)?;
+            let output = calculate_sum(results).unwrap();
             let _ = save_to_file("output/output.txt", &output)?;
         },
         Err(e) => eprintln!("Error: {}", e),
