@@ -62,14 +62,15 @@ fn extract_color_quantity(colors: &[&str], color: &str) -> usize {
           .unwrap_or(0)
 }
 
-fn possible_games(games: &[GameData]) -> Vec<usize> {
+// we search largest number of cubes in each color array and multiply them together
+fn fewest_cubes(games: &[GameData]) -> Vec<usize> {
     games.iter()
-        .filter(|game| {
-            game.red.iter().all(|&r| r <= 12) &&
-            game.green.iter().all(|&g| g <= 13) &&
-            game.blue.iter().all(|&b| b <= 14)
+        .map(|game| {
+            let max_red = *game.red.iter().max().unwrap_or(&0);
+            let max_green = *game.green.iter().max().unwrap_or(&0);
+            let max_blue = *game.blue.iter().max().unwrap_or(&0);
+            max_red * max_green * max_blue
         })
-        .map(|game| game.id)
         .collect()
 }
 
@@ -119,20 +120,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let parsed_results = parse_data(&body)?;
 
-    #[cfg(debug_assertions)]
-    {
-    // print gamedata arrays each game at the time
-    for game in parsed_results.iter() {
-        println!("Game: {}", game.id);
-        println!("Red: {:?}", game.red);
-        println!("Green: {:?}", game.green);
-        println!("Blue: {:?}", game.blue);
-        }
-    }
+    let game_points = fewest_cubes(&parsed_results);
 
-    let game_ids = possible_games(&parsed_results);
-
-    let sum = game_ids.iter().sum::<usize>();
+    let sum = game_points.iter().sum::<usize>();
     #[cfg(debug_assertions)]
     {
         let sum_string = sum.to_string();
@@ -147,12 +137,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 mod tests {
     use super::*;
 
+    fn create_game_data_from_string(input: &str) -> Vec<GameData> {
+        parse_data(input).expect("Failed to parse data")
+    }
+
     #[test]
-    fn test_if_possible() {
+    fn test_fewest_cubes() {
         let input = "Game 1: 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green\nGame 2: 1 blue, 2 green; 3 green, 4 blue, 1 red; 1 green, 1 blue\nGame 3: 8 green, 6 blue, 20 red; 5 blue, 4 red, 13 green; 5 green, 1 red\nGame 4: 1 green, 3 red, 6 blue; 3 green, 6 red; 3 green, 15 blue, 14 red\nGame 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green";
-        let expected = vec!["1".to_string(), "2".to_string(), "5".to_string()];
-        let result = possible_games(input).unwrap();
-        println!("{}{}{}{}", "result: ", result, "expected: ", expected);
-        assert_eq!(result, expected);
+        let games = create_game_data_from_string(input);
+        let game_points = fewest_cubes(&games);
+        let sum = game_points.iter().sum::<usize>();
+        let expected = 2286; // 48, 12, 1560, 630, 36 = 2286
+        assert_eq!(sum, expected);
     }
 }
