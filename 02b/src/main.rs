@@ -15,7 +15,6 @@ use dotenv::dotenv;
 
 #[derive(Clone)]
 struct GameData {
-    id: usize,
     red: Vec<usize>,
     green: Vec<usize>,
     blue: Vec<usize>,
@@ -28,7 +27,6 @@ fn parse_data(input: &str) -> Result<Vec<GameData>, Box<dyn std::error::Error>> 
         .iter()
         .filter_map(|line| {
             let parts: Vec<&str> = line.split(":").collect();
-            let id = parts.get(0)?.split_whitespace().nth(1)?.parse::<usize>().ok()?;
             let segments = parts.get(1)?.split(";");
 
             let mut red = Vec::new();
@@ -42,7 +40,7 @@ fn parse_data(input: &str) -> Result<Vec<GameData>, Box<dyn std::error::Error>> 
                 blue.push(extract_color_quantity(colors.as_slice(), "blue"));
             }
 
-            Some(GameData { id, red, green, blue })
+            Some(GameData { red, green, blue })
         })
         .collect();
     Ok(results)
