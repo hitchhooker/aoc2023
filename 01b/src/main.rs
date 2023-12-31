@@ -4,6 +4,10 @@ use std::fs::File;
 use std::io::Write;
 #[cfg(debug_assertions)]
 use std::io::Error;
+#[cfg(debug_assertions)]
+use std::path::Path;
+#[cfg(debug_assertions)]
+use std::fs;
 
 use std::env;
 use tokio;
@@ -109,16 +113,26 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let url = "https://adventofcode.com/2023/day/1/input";
     let cookie = env::var("SESSION_COOKIE").expect("SESSION_COOKIE not set in .env file");
 
-    #[cfg(debug_assertions)]
-    println!("Debug: Downloading input file...");
+    let input_file_path = "output/input.txt";
+    let body = if Path::new(input_file_path).exists() {
+        #[cfg(debug_assertions)]
+        println!("Debug: Input file found locally. Reading...");
 
-    let body = fetch_url(url, cookie).await?;
+        fs::read_to_string(input_file_path)?
+    } else {
+        #[cfg(debug_assertions)]
+        println!("Debug: Downloading input file...");
 
-    #[cfg(debug_assertions)]
-    println!("Debug: File downloaded successfully.");
+        let downloaded_body = fetch_url(url, cookie).await?;
 
-    #[cfg(debug_assertions)]
-    save_to_file("output/input.txt", &body)?;
+        #[cfg(debug_assertions)]
+        println!("Debug: File downloaded successfully. Saving...");
+
+        #[cfg(debug_assertions)]
+        save_to_file(input_file_path, &downloaded_body)?;
+
+        downloaded_body
+    };
 
     let parsed_results = parse_first_and_last_digit(&body)?;
 
