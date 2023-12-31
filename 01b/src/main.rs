@@ -1,94 +1,93 @@
-use std::env;
+#[cfg(debug_assertions)]
 use std::fs::File;
+#[cfg(debug_assertions)]
 use std::io::Write;
+#[cfg(debug_assertions)]
 use std::io::Error;
-use std::collections::HashMap;
 
+use std::env;
 use tokio;
 use reqwest;
 use dotenv::dotenv;
 
-fn parse_first_and_last_digit(input: &str) -> Result<Vec<String>, Box<dyn std::error::Error>>{
-    let mut results = Vec::new();
+const NUMS: [(&[u8], char); 9] = [
+    (b"one", '1'), (b"two", '2'), (b"three", '3'), (b"four", '4'), 
+    (b"five", '5'), (b"six", '6'), (b"seven", '7'), (b"eight", '8'), 
+    (b"nine", '9'),
+];
 
-    for line in input.lines() {
-        let legit_digits = transform_to_digits(line);
-        let digits: Vec<char> = legit_digits.chars().filter(|c| c.is_numeric()).collect();
-        if let Some(first_digit) = digits.first() {
-            if let Some(last_digit) = digits.last() {
-                results.push(format!("{}{}", first_digit, last_digit));
-                println!("{}{}", first_digit, last_digit)
-            }
-        }
-    }
+
+fn parse_first_and_last_digit(input: &str) -> Result<Vec<String>, Box<dyn std::error::Error>> {
+    // Split the input string into lines
+    let lines: Vec<&str> = input.lines().collect();
+
+    // Process each line to extract first and last digits
+    let results: Vec<String> = lines
+        .iter()
+        .map(|line| {
+            // Extract first number (multiplied by 10 to make it the first digit)
+            let first_digit = (0..line.len())
+                .find_map(|i| num(line.as_bytes(), i))
+                .unwrap();
+
+            // Extract last number with reversed loop
+            let last_digit = (0..line.len())
+                .rev()
+                .find_map(|i| num(line.as_bytes(), i))
+                .unwrap();
+
+            // Combine first and last digits into a string
+            format!("{}{}", first_digit, last_digit)
+        })
+        .collect();
+
+    // Return the results as a Vec<String>
     Ok(results)
 }
 
 
-fn transform_to_digits(input: &str) -> String {
-    let number_map = create_number_map();
-    let mut result = String::new();
-    let mut current_word = String::new();
-
-    for ch in input.chars() {
-
-        if ch.is_alphabetic() {
-            current_word.push(ch);
-            for (word, &digit) in &number_map {
-                if current_word.contains(word) {
-                    // Find the position of the number word
-                    let start = current_word.find(word).unwrap();
-                    let end = start + word.len();
-                    // Keep the part of current_word before the number word
-                    result.push_str(&current_word[..start]);
-                    // Replace the number word with the digit
-                    result.push(digit);
-                    // Keep the part of current_word after the number word
-                    current_word = current_word[end..].to_string();
-                    break;
-                }
-            }
-        } else {
-            result.push_str(&current_word);
-            current_word.clear();
-            result.push(ch);
-        }
-        println!("{}", current_word)
-    }
-    result.push_str(&current_word); // Append any remaining characters
-    println!("{}{}", "input: ", input);
-    println!("{}{}", "result: ", result);
-    result
+/// Extracts a numeric value from a byte slice.
+///
+/// Given a `line` of bytes and an index `i`, this function looks for numeric values
+/// in the `line`. It first checks if the character at index `i` is an ASCII digit.
+/// If so, it converts it to an integer and returns it. If not, it searches for
+/// matches in `NUM_MAP` to find corresponding numeric values for words in the `line`.
+/// It returns the numeric value found, or `None` if no numeric value is detected.
+///
+/// # Arguments
+///
+/// * `line` - The byte slice containing the input line.
+/// * `i` - The index in the byte slice where the search for a numeric value begins.
+///
+/// # Returns
+///
+/// * `Some(usize)` - If a numeric value is found, it returns the numeric value as `Some`.
+/// * `None` - If no numeric value is found, it returns `None`.
+#[inline(always)]
+fn num(line: &[u8], i: usize) -> Option<usize> {
+    line[i]
+        .is_ascii_digit()
+        .then_some((line[i] - b'0') as usize)
+        .or(NUMS
+            .iter()
+            .enumerate()
+            .find(|(_, name)| line[i..].starts_with(name.0))
+            .map(|(num, _)| num + 1))
 }
 
-fn create_number_map() -> HashMap<&'static str, char> {
-    let mut map = HashMap::new();
-    map.insert("one", '1');
-    map.insert("two", '2');
-    map.insert("three", '3');
-    map.insert("four", '4');
-    map.insert("five", '5');
-    map.insert("six", '6');
-    map.insert("seven", '7');
-    map.insert("eight", '8');
-    map.insert("nine", '9');
-    map
-}
-
-fn calculate_sum(results: Vec<String>) -> Result<String, Box<dyn std::error::Error>> {
-    let sum = results
+fn calculate_sum(numbers: &[String]) -> Result<usize, Box<dyn std::error::Error>> {
+    let sum: usize = numbers
         .iter()
-        .map(|s| s.parse::<i32>())
-        .collect::<Result<Vec<i32>, _>>()?
+        .map(|s| s.parse::<usize>())
+        .collect::<Result<Vec<usize>, _>>()?
         .iter()
-        .sum::<i32>();
+        .sum();
 
-    Ok(sum.to_string())  // Convert the sum back to a String for output
+    Ok(sum)
 }
 
 async fn fetch_url(url: &str, cookie: String) -> Result<String, reqwest::Error> {
     let client = reqwest::Client::new();
-    // let response = reqwest::get(url).await?;
     let response = client
         .get(url)
         .header("Cookie", cookie)
@@ -97,12 +96,12 @@ async fn fetch_url(url: &str, cookie: String) -> Result<String, reqwest::Error> 
     response.text().await
 }
 
+#[cfg(debug_assertions)]
 fn save_to_file(filename: &str, data: &str) -> Result<(), Error> {
     let mut file = File::create(filename)?;
     file.write_all(data.as_bytes())?;
     Ok(())
 }
-
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -110,22 +109,33 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let url = "https://adventofcode.com/2023/day/1/input";
     let cookie = env::var("SESSION_COOKIE").expect("SESSION_COOKIE not set in .env file");
 
+    #[cfg(debug_assertions)]
+    println!("Debug: Downloading input file...");
+
     let body = fetch_url(url, cookie).await?;
 
-    // input
-    let _ = save_to_file("output/input.txt", &body);
+    #[cfg(debug_assertions)]
+    println!("Debug: File downloaded successfully.");
 
-    // output
-    match parse_first_and_last_digit(&body) {
-        Ok(results) => {
-            let numbers = results.join("\n");  // Combine the results into a single string
-            let _ = save_to_file("output/numbers.txt", &numbers)?;
-            let output = calculate_sum(results).unwrap();
-            let _ = save_to_file("output/output.txt", &output)?;
-            println!("{}{}", "result:", output)
-        },
-        Err(e) => eprintln!("Error: {}", e),
+    #[cfg(debug_assertions)]
+    save_to_file("output/input.txt", &body)?;
+
+    let parsed_results = parse_first_and_last_digit(&body)?;
+
+    #[cfg(debug_assertions)]
+    {
+        let numbers = parsed_results.iter().cloned().collect::<Vec<String>>().join("\n");
+        save_to_file("output/numbers.txt", &numbers)?;
     }
+    let sum = calculate_sum(&parsed_results)?;
+
+    #[cfg(debug_assertions)]
+    {
+        let sum_string = sum.to_string();
+        save_to_file("output/output.txt", &sum_string)?;
+    }
+
+    println!("sum: {}", sum);
 
     Ok(())
 }
@@ -146,8 +156,9 @@ mod tests {
     #[test]
     fn test_calculate_sum() {
         let input = vec!["29".to_string(), "83".to_string(), "13".to_string(), "24".to_string(), "42".to_string(), "14".to_string(), "76".to_string()];
-        let expected_sum = "281"; // expected sum of 29, 83, 13, 24, 42, 14, and 76.
-        let result = calculate_sum(input).unwrap();
+        // usize expected_sum
+        let expected_sum = 281; // expected sum of 29, 83, 13, 24, 42, 14, and 76.
+        let result = calculate_sum(&input).unwrap();
         println!("{}", result);
 
         assert_eq!(result, expected_sum);
