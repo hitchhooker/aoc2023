@@ -83,7 +83,7 @@ impl EngineSchematic {
         let mut number = String::new();
         let grid_width = self.grid[row].len();
 
-        // Move left to the beginning of the number string
+        // Move to beginning in the matched number string
         let mut current_col = col;
         while current_col > 0 && self.grid[row][current_col - 1].is_digit(10) {
             current_col -= 1;
