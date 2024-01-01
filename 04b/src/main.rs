@@ -30,15 +30,6 @@ impl Card {
 
         self.matching_numbers = Some(matches); // Cache the calculated value
         matches
-        // let mut matches = 0;
-        //
-        // for &number in &self.player_numbers {
-        //     if self.winning_numbers.contains(&number) {
-        //         matches += 1;
-        //     }
-        // }
-        //
-        // matches
     }
 
 
@@ -110,28 +101,6 @@ fn play_cards(mut cards: Vec<Card>) -> Vec<Card> {
     cards
 }
 
-
-// fn play_cards(mut cards: Vec<Card>) -> Vec<Card> {
-//     let mut i = 0;
-//
-//     // Loop through all cards, including those added during the process
-//     while i < cards.len() {
-//         let card = &cards[i];
-//         let matches = card.calculate_matches();
-//
-//         // Use create_subsequent_copies to generate new copies
-//         let new_cards = card.create_subsequent_copies(&cards, matches);
-//         for new_card in new_cards {
-//             cards.push(new_card);
-//         }
-//
-//         // Increment to process the next card
-//         i += 1;
-//     }
-//
-//     cards
-// }
-//
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
