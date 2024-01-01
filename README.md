@@ -2,6 +2,10 @@
 
 just me practicing rust by solving the advent of code 2023 problems
 
+these most likely wont stand much to the top results of the benchmarkings,
+but im still targeting for the improved performance throguh
+correct data types and structures.
+
 ## code
 - [lib.rs](https://github.com/hitchhooker/aoc2023/blob/master/lib/src/lib.rs)
 - [day01a](https://github.com/hitchhooker/aoc2023/blob/master/01a/src/main.rs)
