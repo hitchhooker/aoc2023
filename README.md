@@ -15,3 +15,6 @@ correct data types and structures.
 - [day03a](https://github.com/hitchhooker/aoc2023/blob/master/03a/src/main.rs)
 - [day03b](https://github.com/hitchhooker/aoc2023/blob/master/03b/src/main.rs)
 - [day04a](https://github.com/hitchhooker/aoc2023/blob/master/04a/src/main.rs)
+  - cargo run --release  0,04s user 0,03s system 101% cpu 0,075 total
+- [day04b](https://github.com/hitchhooker/aoc2023/blob/master/04a/src/main.rs)
+  - cargo run --release  4,10s user 1,92s system 100% cpu 6,010 total
